@@ -2,14 +2,13 @@
 
 # docker-postgres
 
-**Production-ready PostgreSQL + pgAdmin stack on Docker Compose**
+**Production-ready PostgreSQL stack on Docker Compose**
 
 A production-oriented environment with hardened security defaults, health checks, backups, and a convenient Makefile for day-to-day operations.
 
 <br>
 
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18.4-336791?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
-[![pgAdmin](https://img.shields.io/badge/pgAdmin-9.15-326690?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.pgadmin.org/)
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://docs.docker.com/compose/)
 [![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 
@@ -26,29 +25,26 @@ A production-oriented environment with hardened security defaults, health checks
 
 ## Overview
 
-A minimal yet complete Docker stack for running **PostgreSQL 18** with the **pgAdmin 4** web UI. Security-first by default: ports bound to `127.0.0.1`, `scram-sha-256` authentication, and an explicit `pg_hba.conf` that rejects external connections.
+A minimal yet complete Docker stack for running **PostgreSQL 18**. Password authentication via `scram-sha-256`, port `5432` exposed on all interfaces, Makefile for day-to-day operations.
 
 ```mermaid
 flowchart LR
     subgraph host["Host"]
         App["Applications"]
-        Browser["Browser"]
+        CLI["make / psql"]
     end
 
     subgraph docker["Docker · docker-lan network"]
         PG["PostgreSQL 18"]
-        PGA["pgAdmin 4"]
     end
 
-    App -->|"127.0.0.1:5432"| PG
-    Browser -->|"127.0.0.1:5050"| PGA
-    PGA -->|"postgres:5432"| PG
+    App -->|":5432"| PG
+    CLI -->|"make psql"| PG
 ```
 
 | Service | Address | Purpose |
 |---------|---------|---------|
-| **PostgreSQL** | `127.0.0.1:5432` | Primary database |
-| **pgAdmin** | http://127.0.0.1:5050 | Web administration UI |
+| **PostgreSQL** | `0.0.0.0:5432` | Primary database |
 
 ---
 
@@ -66,17 +62,16 @@ flowchart LR
 git clone https://github.com/iSmartyPRO/docker-postgres.git
 cd docker-postgres
 
-make setup   # .env with passwords + pgAdmin auto-configuration
-make up      # start containers
+make setup   # .env with generated password
+make up      # start PostgreSQL
 ```
 
 | Command | Action |
 |---------|--------|
-| `make setup` | Creates `.env`, generates passwords, configures pgAdmin |
-| `make up` | Creates the `docker-lan` network (if missing) and starts the stack |
+| `make setup` | Creates `.env`, generates password |
+| `make up` | Creates the `docker-lan` network (if missing) and starts PostgreSQL |
 | `make health` | Checks PostgreSQL readiness |
-
-pgAdmin login: email from `PGADMIN_DEFAULT_EMAIL` in `.env`.
+| `make help` | Lists all available commands |
 
 ---
 
@@ -99,8 +94,8 @@ pgAdmin login: email from `PGADMIN_DEFAULT_EMAIL` in `.env`.
 
 ### Security & ops
 
-- `scram-sha-256`, strict `pg_hba.conf`
-- Ports bound to `127.0.0.1` only
+- `scram-sha-256` authentication
+- Port `5432` on all host interfaces (`0.0.0.0`)
 - Memory limits, log rotation
 - `no-new-privileges` for containers
 - Backup / restore scripts with retention
@@ -110,20 +105,22 @@ pgAdmin login: email from `PGADMIN_DEFAULT_EMAIL` in `.env`.
 <tr>
 <td width="50%" valign="top">
 
-### pgAdmin
+### Makefile
 
-- pgAdmin **9.15** with auto-connect to PostgreSQL
-- Pre-configured `servers.json` and `pgpass`
-- Waits for PostgreSQL healthy status on startup
+- Lifecycle: `up`, `down`, `restart`, `recreate`
+- SQL shell: `psql`, `sql`, `shell`
+- Databases: `dbs`, `db-create`, `db-drop`, `db-size`
+- Users: `users`, `user-create`, `user-drop`
+- Maintenance: `vacuum`, `connections`, `extensions`
 
 </td>
 <td width="50%" valign="top">
 
 ### Infrastructure
 
-- Named volumes (`postgres_data`, `pgadmin_data`)
+- Named volume (`postgres_data`)
 - External `docker-lan` network for integration with other stacks
-- nginx reverse proxy examples (dedicated domain and subpath)
+- All settings driven by `.env` variables
 
 </td>
 </tr>
@@ -135,47 +132,69 @@ pgAdmin login: email from `PGADMIN_DEFAULT_EMAIL` in `.env`.
 
 ```
 docker-postgres/
-├── docker-compose.yml          # Service orchestration
+├── docker-compose.yml          # PostgreSQL service
 ├── Makefile                    # Operational commands
 ├── .env.example                # Environment variable template
 │
 ├── config/
 │   ├── postgresql.conf         # PostgreSQL settings
-│   ├── pg_hba.conf             # Access rules
-│   └── pgadmin/                # pgAdmin auto-config (generated)
+│   └── pg_hba.conf             # Access rules
 │
 ├── init/
 │   └── 01-extensions.sql       # SQL run on first startup
 │
-├── scripts/
-│   ├── backup.sh               # Backup
-│   ├── restore.sh              # Restore from backup
-│   └── setup-pgadmin.sh        # pgAdmin configuration generator
-│
-└── nginx/
-    ├── pgadmin.example.conf           # Reverse proxy on a dedicated domain
-    └── pgadmin-subpath.example.conf   # pgAdmin on a subpath (/pgadmin4/)
+└── scripts/
+    ├── backup.sh               # Backup
+    └── restore.sh              # Restore from backup
 ```
 
 ---
 
 ## Operations
 
+Run `make help` for the full list. Common commands:
+
 ```bash
-make ps          # container status
-make health      # PostgreSQL readiness check
-make logs        # live logs
-make backup      # backup to backups/
+# Lifecycle
+make ps              # container status
+make health          # PostgreSQL readiness check
+make info            # connection info from .env
+make logs            # live logs
+make down            # stop the stack
+make pull            # pull updated images
+
+# SQL
+make psql            # interactive psql (default DB)
+make psql DB=other   # psql to another database
+make sql SQL='SELECT version();'
+
+# Databases
+make dbs                                    # list databases
+make db-create DB=myapp                     # create database
+make db-drop DB=myapp                       # drop database (with confirmation)
+make db-size                                # size of default DB
+
+# Users
+make users                                  # list roles
+make user-create USER=reader PASSWORD=secret
+make user-drop USER=reader
+
+# Backup
+make backup                                 # backup to backups/
+make backup-list                            # list backups
 make restore BACKUP=backups/app_YYYYMMDD_HHMMSS.sql.gz
-make psql        # interactive psql shell
-make down        # stop the stack
-make pull        # pull updated images
+make restore BACKUP=backups/file.sql.gz FORCE=1   # skip confirmation
+
+# Maintenance
+make vacuum                                 # VACUUM ANALYZE
+make connections                            # active connections
+make extensions                             # installed extensions
 ```
 
 ### Application Connection
 
 ```
-Host:     127.0.0.1          # or postgres from the docker-lan network
+Host:     <host-ip>        # or postgres from the docker-lan network
 Port:     5432
 Database: app
 User:     app
@@ -185,7 +204,7 @@ Password: <from .env>
 Connection string:
 
 ```
-postgresql://app:<password>@127.0.0.1:5432/app
+postgresql://app:<password>@<host-ip>:5432/app
 ```
 
 ### Automated Backups (cron)
@@ -204,9 +223,9 @@ Retention period is set in `.env` → `BACKUP_RETENTION_DAYS` (default: 14 days)
 |------|--------|
 | **1. Passwords** | Set strong values in `.env`, or run `make env` for auto-generation |
 | **2. Memory** | Tune `shared_buffers`, `effective_cache_size` in `config/postgresql.conf` |
-| **3. Remote access** | Remove `127.0.0.1:` before ports in `docker-compose.yml` + configure firewall |
-| **4. SSL** | Enable `ssl = on`, mount certificates into PostgreSQL |
-| **5. Expose pgAdmin** | Use examples from `nginx/` with HTTPS and IP restrictions |
+| **3. Network** | Restrict access via firewall; tighten `config/pg_hba.conf` if needed |
+| **4. Local only** | Change port mapping to `127.0.0.1:${POSTGRES_PORT}:5432` in `docker-compose.yml` |
+| **5. SSL** | Enable `ssl = on`, mount certificates into PostgreSQL |
 | **6. Replication** | `wal_level = replica` is already enabled — add a standby as needed |
 
 ---
@@ -240,11 +259,10 @@ make restore BACKUP=backups/app_YYYYMMDD_HHMMSS.sql.gz
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `POSTGRES_VERSION` | `18.4-alpine` | PostgreSQL image version |
-| `POSTGRES_DB` | `app` | Database name |
+| `POSTGRES_DB` | `app` | Default database name |
 | `POSTGRES_USER` | `app` | Database user |
+| `POSTGRES_PASSWORD` | — | Database password |
 | `POSTGRES_PORT` | `5432` | Host port |
-| `PGADMIN_VERSION` | `9.15` | pgAdmin image version |
-| `PGADMIN_PORT` | `5050` | pgAdmin host port |
 | `TZ` | `UTC` | Timezone |
 | `BACKUP_RETENTION_DAYS` | `14` | Backup retention period |
 

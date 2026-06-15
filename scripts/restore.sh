@@ -30,10 +30,13 @@ fi
 
 echo "Restoring ${BACKUP_FILE} into database ${POSTGRES_DB}..."
 echo "WARNING: This will overwrite data in the target database."
-read -r -p "Continue? [y/N] " confirm
-if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
-  echo "Aborted."
-  exit 0
+
+if [[ "${FORCE:-}" != "1" ]]; then
+  read -r -p "Continue? [y/N] " confirm
+  if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
+    echo "Aborted."
+    exit 0
+  fi
 fi
 
 gunzip -c "$BACKUP_FILE" | docker compose exec -T -e PGPASSWORD="$POSTGRES_PASSWORD" postgres \

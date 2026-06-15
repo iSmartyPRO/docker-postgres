@@ -10,8 +10,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       TZ: ${TZ:-UTC}
     ports:
-      # Bind to localhost only — remove 127.0.0.1: prefix if remote access is required
-      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       # PG 18+: mount parent dir (data goes to /var/lib/postgresql/18/docker)
       - postgres_data:/var/lib/postgresql
@@ -46,54 +45,9 @@ services:
     security_opt:
       - no-new-privileges:true
 
-  pgadmin:
-    image: dpage/pgadmin4:${PGADMIN_VERSION:-9.15}
-    container_name: pgadmin
-    restart: unless-stopped
-    env_file: .env
-    environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
-      PGADMIN_CONFIG_SERVER_MODE: "True"
-      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
-      PGADMIN_CONFIG_CONSOLE_LOG_LEVEL: "30"
-      PGADMIN_CONFIG_WTF_CSRF_ENABLED: "True"
-    ports:
-      - "127.0.0.1:${PGADMIN_PORT:-5050}:80"
-    volumes:
-      - pgadmin_data:/var/lib/pgadmin
-      - ./config/pgadmin/servers.json:/pgadmin4/servers.json:ro
-      - ./config/pgadmin/pgpass:/pgpass:ro
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - docker-lan
-    healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:80/misc/ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-        reservations:
-          memory: 128M
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-    security_opt:
-      - no-new-privileges:true
-
 volumes:
   postgres_data:
     name: postgres_data
-  pgadmin_data:
-    name: pgadmin_data
 
 networks:
   docker-lan:

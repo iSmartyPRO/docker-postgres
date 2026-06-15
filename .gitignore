@@ -1,7 +1,4 @@
 .env
-config/pgadmin/pgpass
-config/pgadmin/servers.json
-!config/pgadmin/.gitkeep
 data/
 backups/
 *.log
