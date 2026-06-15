@@ -2,9 +2,9 @@
 
 # docker-postgres
 
-**Production-ready стек PostgreSQL + pgAdmin на Docker Compose**
+**Production-ready PostgreSQL + pgAdmin stack on Docker Compose**
 
-Готовое к продакшену окружение с жёсткой конфигурацией безопасности, health checks, бэкапами и удобным Makefile для ежедневной эксплуатации.
+A production-oriented environment with hardened security defaults, health checks, backups, and a convenient Makefile for day-to-day operations.
 
 <br>
 
@@ -15,27 +15,27 @@
 
 <br>
 
-[Быстрый старт](#-быстрый-старт) ·
-[Возможности](#-возможности) ·
-[Эксплуатация](#-эксплуатация) ·
-[Продакшн](#-настройка-под-продакшн)
+[Quick Start](#-quick-start) ·
+[Features](#-features) ·
+[Operations](#-operations) ·
+[Production](#-production-setup)
 
 </div>
 
 ---
 
-## Обзор
+## Overview
 
-Минималистичный, но полноценный Docker-стек для развёртывания **PostgreSQL 18** с веб-интерфейсом **pgAdmin 4**. Проект ориентирован на безопасность по умолчанию: порты привязаны к `127.0.0.1`, аутентификация `scram-sha-256`, явный `pg_hba.conf` с отклонением внешних подключений.
+A minimal yet complete Docker stack for running **PostgreSQL 18** with the **pgAdmin 4** web UI. Security-first by default: ports bound to `127.0.0.1`, `scram-sha-256` authentication, and an explicit `pg_hba.conf` that rejects external connections.
 
 ```mermaid
 flowchart LR
-    subgraph host["Хост"]
-        App["Приложения"]
-        Browser["Браузер"]
+    subgraph host["Host"]
+        App["Applications"]
+        Browser["Browser"]
     end
 
-    subgraph docker["Docker · сеть docker-lan"]
+    subgraph docker["Docker · docker-lan network"]
         PG["PostgreSQL 18"]
         PGA["pgAdmin 4"]
     end
@@ -45,65 +45,65 @@ flowchart LR
     PGA -->|"postgres:5432"| PG
 ```
 
-| Сервис | Адрес | Назначение |
-|--------|-------|------------|
-| **PostgreSQL** | `127.0.0.1:5432` | Основная СУБД |
-| **pgAdmin** | http://127.0.0.1:5050 | Веб-интерфейс администрирования |
+| Service | Address | Purpose |
+|---------|---------|---------|
+| **PostgreSQL** | `127.0.0.1:5432` | Primary database |
+| **pgAdmin** | http://127.0.0.1:5050 | Web administration UI |
 
 ---
 
-## Быстрый старт
+## Quick Start
 
-### Требования
+### Requirements
 
 - [Docker](https://docs.docker.com/get-docker/) 24+
 - [Docker Compose](https://docs.docker.com/compose/) v2
-- `make`, `openssl` (для генерации паролей)
+- `make`, `openssl` (for password generation)
 
-### Установка
+### Installation
 
 ```bash
 git clone https://github.com/iSmartyPRO/docker-postgres.git
 cd docker-postgres
 
-make setup   # .env с паролями + автоконфигурация pgAdmin
-make up      # запуск контейнеров
+make setup   # .env with passwords + pgAdmin auto-configuration
+make up      # start containers
 ```
 
-| Команда | Действие |
-|---------|----------|
-| `make setup` | Создаёт `.env`, генерирует пароли, настраивает pgAdmin |
-| `make up` | Создаёт сеть `docker-lan` (если нет) и поднимает стек |
-| `make health` | Проверяет готовность PostgreSQL |
+| Command | Action |
+|---------|--------|
+| `make setup` | Creates `.env`, generates passwords, configures pgAdmin |
+| `make up` | Creates the `docker-lan` network (if missing) and starts the stack |
+| `make health` | Checks PostgreSQL readiness |
 
-Вход в pgAdmin — email из `PGADMIN_DEFAULT_EMAIL` в `.env`.
+pgAdmin login: email from `PGADMIN_DEFAULT_EMAIL` in `.env`.
 
 ---
 
-## Возможности
+## Features
 
 <table>
 <tr>
 <td width="50%" valign="top">
 
-### База данных
+### Database
 
-- PostgreSQL **18.4** (Alpine), фиксированная версия образа
-- Тюнинг `postgresql.conf` под ~2 GB RAM
-- `wal_level = replica` — готовность к репликации
-- Расширение `pg_stat_statements` из коробки
-- Health check через `pg_isready`
+- PostgreSQL **18.4** (Alpine), pinned image version
+- Tuned `postgresql.conf` for ~2 GB RAM
+- `wal_level = replica` — replication-ready
+- `pg_stat_statements` extension out of the box
+- Health check via `pg_isready`
 
 </td>
 <td width="50%" valign="top">
 
-### Безопасность и ops
+### Security & ops
 
-- `scram-sha-256`, строгий `pg_hba.conf`
-- Порты только на `127.0.0.1`
-- Лимиты памяти, ротация логов
-- `no-new-privileges` для контейнеров
-- Скрипты backup / restore с retention
+- `scram-sha-256`, strict `pg_hba.conf`
+- Ports bound to `127.0.0.1` only
+- Memory limits, log rotation
+- `no-new-privileges` for containers
+- Backup / restore scripts with retention
 
 </td>
 </tr>
@@ -112,18 +112,18 @@ make up      # запуск контейнеров
 
 ### pgAdmin
 
-- pgAdmin **9.15** с автоподключением к PostgreSQL
-- Преднастроенный `servers.json` и `pgpass`
-- Ожидание healthy-статуса PostgreSQL при старте
+- pgAdmin **9.15** with auto-connect to PostgreSQL
+- Pre-configured `servers.json` and `pgpass`
+- Waits for PostgreSQL healthy status on startup
 
 </td>
 <td width="50%" valign="top">
 
-### Инфраструктура
+### Infrastructure
 
-- Именованные volumes (`postgres_data`, `pgadmin_data`)
-- Внешняя сеть `docker-lan` для связи с другими стеками
-- Примеры nginx reverse proxy (домен и subpath)
+- Named volumes (`postgres_data`, `pgadmin_data`)
+- External `docker-lan` network for integration with other stacks
+- nginx reverse proxy examples (dedicated domain and subpath)
 
 </td>
 </tr>
@@ -131,136 +131,136 @@ make up      # запуск контейнеров
 
 ---
 
-## Структура проекта
+## Project Structure
 
 ```
 docker-postgres/
-├── docker-compose.yml          # Оркестрация сервисов
-├── Makefile                    # Команды эксплуатации
-├── .env.example                # Шаблон переменных окружения
+├── docker-compose.yml          # Service orchestration
+├── Makefile                    # Operational commands
+├── .env.example                # Environment variable template
 │
 ├── config/
-│   ├── postgresql.conf         # Настройки PostgreSQL
-│   ├── pg_hba.conf             # Правила доступа
-│   └── pgadmin/                # Автоконфигурация pgAdmin (генерируется)
+│   ├── postgresql.conf         # PostgreSQL settings
+│   ├── pg_hba.conf             # Access rules
+│   └── pgadmin/                # pgAdmin auto-config (generated)
 │
 ├── init/
-│   └── 01-extensions.sql       # SQL при первом запуске
+│   └── 01-extensions.sql       # SQL run on first startup
 │
 ├── scripts/
-│   ├── backup.sh               # Резервное копирование
-│   ├── restore.sh              # Восстановление из бэкапа
-│   └── setup-pgadmin.sh        # Генерация конфигурации pgAdmin
+│   ├── backup.sh               # Backup
+│   ├── restore.sh              # Restore from backup
+│   └── setup-pgadmin.sh        # pgAdmin configuration generator
 │
 └── nginx/
-    ├── pgadmin.example.conf           # Reverse proxy на отдельном домене
-    └── pgadmin-subpath.example.conf   # pgAdmin на подпути (/pgadmin4/)
+    ├── pgadmin.example.conf           # Reverse proxy on a dedicated domain
+    └── pgadmin-subpath.example.conf   # pgAdmin on a subpath (/pgadmin4/)
 ```
 
 ---
 
-## Эксплуатация
+## Operations
 
 ```bash
-make ps          # статус контейнеров
-make health      # проверка готовности PostgreSQL
-make logs        # логи в реальном времени
-make backup      # бэкап в backups/
+make ps          # container status
+make health      # PostgreSQL readiness check
+make logs        # live logs
+make backup      # backup to backups/
 make restore BACKUP=backups/app_YYYYMMDD_HHMMSS.sql.gz
-make psql        # интерактивная консоль psql
-make down        # остановить стек
-make pull        # обновить образы
+make psql        # interactive psql shell
+make down        # stop the stack
+make pull        # pull updated images
 ```
 
-### Подключение приложений
+### Application Connection
 
 ```
-Host:     127.0.0.1          # или postgres из сети docker-lan
+Host:     127.0.0.1          # or postgres from the docker-lan network
 Port:     5432
 Database: app
 User:     app
-Password: <из .env>
+Password: <from .env>
 ```
 
-Строка подключения:
+Connection string:
 
 ```
 postgresql://app:<password>@127.0.0.1:5432/app
 ```
 
-### Автоматические бэкапы (cron)
+### Automated Backups (cron)
 
 ```cron
 0 2 * * * cd /path/to/docker-postgres && ./scripts/backup.sh >> /var/log/postgres-backup.log 2>&1
 ```
 
-Период хранения задаётся в `.env` → `BACKUP_RETENTION_DAYS` (по умолчанию 14 дней).
+Retention period is set in `.env` → `BACKUP_RETENTION_DAYS` (default: 14 days).
 
 ---
 
-## Настройка под продакшн
+## Production Setup
 
-| Шаг | Действие |
-|-----|----------|
-| **1. Пароли** | Задайте надёжные значения в `.env` или `make env` для автогенерации |
-| **2. Память** | Настройте `shared_buffers`, `effective_cache_size` в `config/postgresql.conf` |
-| **3. Удалённый доступ** | Уберите `127.0.0.1:` перед портами в `docker-compose.yml` + firewall |
-| **4. SSL** | Включите `ssl = on`, смонтируйте сертификаты в PostgreSQL |
-| **5. pgAdmin наружу** | Используйте примеры из `nginx/` с HTTPS и ограничением по IP |
-| **6. Репликация** | `wal_level = replica` уже включён — добавьте standby при необходимости |
+| Step | Action |
+|------|--------|
+| **1. Passwords** | Set strong values in `.env`, or run `make env` for auto-generation |
+| **2. Memory** | Tune `shared_buffers`, `effective_cache_size` in `config/postgresql.conf` |
+| **3. Remote access** | Remove `127.0.0.1:` before ports in `docker-compose.yml` + configure firewall |
+| **4. SSL** | Enable `ssl = on`, mount certificates into PostgreSQL |
+| **5. Expose pgAdmin** | Use examples from `nginx/` with HTTPS and IP restrictions |
+| **6. Replication** | `wal_level = replica` is already enabled — add a standby as needed |
 
 ---
 
-## Обновление
+## Upgrading
 
 ```bash
-# Обновите версии в .env, затем:
+# Update versions in .env, then:
 make pull
 make up
 ```
 
-Данные сохраняются в volume `postgres_data`.
+Data is persisted in the `postgres_data` volume.
 
-### Миграция major-версии PostgreSQL
+### PostgreSQL Major Version Migration
 
-При смене major-версии (например, 16 → 18) структура каталога данных меняется. Безопасный путь:
+When upgrading across major versions (e.g. 16 → 18), the data directory layout changes. Safe approach:
 
 ```bash
 make backup
 make down
-docker volume rm postgres_data   # только если бэкап сохранён
+docker volume rm postgres_data   # only if backup is saved
 make up
 make restore BACKUP=backups/app_YYYYMMDD_HHMMSS.sql.gz
 ```
 
 ---
 
-## Переменные окружения
+## Environment Variables
 
-| Переменная | По умолчанию | Описание |
-|------------|--------------|----------|
-| `POSTGRES_VERSION` | `18.4-alpine` | Версия образа PostgreSQL |
-| `POSTGRES_DB` | `app` | Имя базы данных |
-| `POSTGRES_USER` | `app` | Пользователь БД |
-| `POSTGRES_PORT` | `5432` | Порт на хосте |
-| `PGADMIN_VERSION` | `9.15` | Версия образа pgAdmin |
-| `PGADMIN_PORT` | `5050` | Порт pgAdmin на хосте |
-| `TZ` | `UTC` | Часовой пояс |
-| `BACKUP_RETENTION_DAYS` | `14` | Срок хранения бэкапов |
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `POSTGRES_VERSION` | `18.4-alpine` | PostgreSQL image version |
+| `POSTGRES_DB` | `app` | Database name |
+| `POSTGRES_USER` | `app` | Database user |
+| `POSTGRES_PORT` | `5432` | Host port |
+| `PGADMIN_VERSION` | `9.15` | pgAdmin image version |
+| `PGADMIN_PORT` | `5050` | pgAdmin host port |
+| `TZ` | `UTC` | Timezone |
+| `BACKUP_RETENTION_DAYS` | `14` | Backup retention period |
 
-Полный список — в [`.env.example`](.env.example).
+Full list in [`.env.example`](.env.example).
 
 ---
 
-## Лицензия
+## License
 
-Проект распространяется под лицензией [MIT](LICENSE).
+This project is licensed under the [MIT License](LICENSE).
 
 ---
 
 <div align="center">
 
-Создано с ♥ для удобного и безопасного развёртывания PostgreSQL
+Built with ♥ for convenient and secure PostgreSQL deployments
 
 **[iSmartyPRO](https://github.com/iSmartyPRO)**
 
