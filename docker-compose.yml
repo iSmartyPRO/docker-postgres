@@ -1,7 +1,7 @@
 services:
   postgres:
     image: postgres:${POSTGRES_VERSION:-18.4-alpine}
-    container_name: postgres
+    container_name: ${DOCKER_CONTAINER_NAME:-postgres}
     restart: unless-stopped
     env_file: .env
     environment:
